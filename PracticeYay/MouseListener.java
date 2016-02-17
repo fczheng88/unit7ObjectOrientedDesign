@@ -10,13 +10,9 @@ import java.awt.geom.*;
  */
 public interface MouseListener
 {
-
     void mousePressedLocation(MouseEvent event);
-
     void mouseReleased(MouseEvent event);
-
     void mouseClicked(MouseEvent event);
-
+    void mouseEntered(MouseEvent event);
     void mouseExited(MouseEvent event);
-
 }

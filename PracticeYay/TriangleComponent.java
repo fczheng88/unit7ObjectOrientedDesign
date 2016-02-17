@@ -4,52 +4,61 @@ import java.awt.*;
 import java.awt.geom.*;
 public class TriangleComponent extends JComponent
 {
-    private Point2D.Double p1, p2, p3;
-    private Line2D.Double line1, line2, line3;
-
+    private int numPts;
+    private Point2D[] pts;
+    private Rectangle2D.Double p1,p2,p3;
+    private Line2D.Double l1,l2,l3;
     /**
      * Constructor for objects of class Triangle
      */
     public TriangleComponent()
     {        
-        p1=new Point2D.Double(0.0,0.0);
-        p2=new Point2D.Double(0.0,0.0);
-        p3=new Point2D.Double(0.0,0.0);
-        line1 = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-        line2 = new Line2D.Double(p2.getX(), p2.getY(), p3.getX(), p3.getY());
-        line3 = new Line2D.Double(p1.getX(), p1.getY(), p3.getX(), p3.getY());
+        numPts=0;
+        pts = new Point2D[3];
+        p1=p2=p3=new Rectangle2D.Double(0,0,0,0);
+    }
+
+    public void addPoint(int x, int y)
+    {
+        if(numPts!=3)
+        {
+            pts[numPts] = new Point2D.Double(x, y);
+            numPts++;
+            return;
+        }
+        numPts=0;
     }
 
     public void paintComponent(Graphics g)
     {
         Graphics2D g2 = (Graphics2D) g;
-        g2.draw(new Line2D.Double(p1.getX(),p1.getY(),p1.getX(),p1.getY()));
-        g2.draw(new Line2D.Double(p2.getX(),p2.getY(),p2.getX(),p2.getY()));
-        g2.draw(new Line2D.Double(p3.getX(),p3.getY(),p3.getX(),p3.getY()));
-        g2.draw(line1);
-        g2.draw(line2);
-        g2.draw(line3);
-    }
 
-    public void changeStuff(Point2D.Double p1, Point2D.Double p2, Point2D.Double p3, boolean is4th)
-    {
-        if(is4th)
+        if(numPts>=1)
         {
-            this.p1=new Point2D.Double(0.0,0.0);
-            this.p2=new Point2D.Double(0.0,0.0);
-            this.p3=new Point2D.Double(0.0,0.0);
-            line1 = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-            line2 = new Line2D.Double(p2.getX(), p2.getY(), p3.getX(), p3.getY());
-            line3 = new Line2D.Double(p1.getX(), p1.getY(), p3.getX(), p3.getY()); 
-            return;
+            p1 = new Rectangle2D.Double(pts[0].getX(),pts[0].getY(),0,0);
+            g2.draw(p1);
         }
-        this.p1 = p1;
-        this.p2 = p2;
-        this.p3 = p3;
-        line1 = new Line2D.Double(p1.getX(), p1.getY(), p2.getX(), p2.getY());
-        line2 = new Line2D.Double(p2.getX(), p2.getY(), p3.getX(), p3.getY());
-        line3 = new Line2D.Double(p1.getX(), p1.getY(), p3.getX(), p3.getY());
-        repaint();
+        if(numPts>=2)
+        {
+            p2 = new Rectangle2D.Double(pts[1].getX(),pts[1].getY(),0,0);
+            l1 = new Line2D.Double(pts[0].getX(),pts[0].getY(),pts[1].getX(),pts[1].getY());
+            g2.draw(p2);
+            g2.draw(l1);
+        }
+        if(numPts>=3)
+        {
+            p3 = new Rectangle2D.Double(pts[2].getX(),pts[2].getY(),0,0);
+            l2 = new Line2D.Double(pts[1].getX(),pts[1].getY(),pts[2].getX(),pts[2].getY());
+            l3 = new Line2D.Double(pts[0].getX(),pts[0].getY(),pts[2].getX(),pts[2].getY());
+            
+            g2.draw(p3);
+            g2.draw(l2);
+            g2.draw(l3);
+        }
+        
+        
+        
+        
     }
 
 }
