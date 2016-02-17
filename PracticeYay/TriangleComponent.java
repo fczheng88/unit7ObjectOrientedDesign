@@ -6,9 +6,7 @@ public class TriangleComponent extends JComponent
 {
     private int numPts;
     private Rectangle2D[] pts;
-    /**
-     * Constructor for objects of class Triangle
-     */
+
     public TriangleComponent()
     {        
         numPts=0;
@@ -29,7 +27,6 @@ public class TriangleComponent extends JComponent
     public void paintComponent(Graphics g)
     {
         Graphics2D g2 = (Graphics2D) g;
-
         if(numPts>=1)
         {
             g2.draw(pts[0]);
@@ -45,6 +42,5 @@ public class TriangleComponent extends JComponent
             g2.draw(new Line2D.Double(pts[1].getX(),pts[1].getY(),pts[2].getX(),pts[2].getY()));
             g2.draw(new Line2D.Double(pts[0].getX(),pts[0].getY(),pts[2].getX(),pts[2].getY()));
         }
-
     }
 }
