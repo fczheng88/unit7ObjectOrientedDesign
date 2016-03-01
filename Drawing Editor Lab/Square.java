@@ -6,10 +6,9 @@ import java.awt.geom.*;
 
 public class Square extends Shape
 {
-    public Square(Point2D.Double center, double radius, Color color){
-        this.center = center;
-        this.radius = radius;
-        this.color = color;
+    public Square(Point2D.Double center, double radius, Color color)
+    {
+        super(center, radius, color);
     }
 
     Point2D.Double getCenter()
@@ -25,7 +24,7 @@ public class Square extends Shape
     {radius = r;}
 
     boolean isInside(Point2D.Double point)
-    {return true;//mehfu}
-
+    {
+        return Math.abs(point.getX()-center.getX())<radius&&Math.abs(point.getY()-center.getY())<radius;
     }
 }
