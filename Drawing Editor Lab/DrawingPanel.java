@@ -15,16 +15,18 @@ public class DrawingPanel extends JComponent
     private MyMouseListener listener;
     private MyMouseMotionListener motionListener;
     private Point2D.Double oMousePos;
-    private Dimension ctrOffset;
+    private Dimension ctrOffset, preferredSize;
+    private boolean resizeMode;
 
     public DrawingPanel()
     {
+        preferredSize = new Dimension(600,600);
         shapes = new ArrayList<Shape>();
 
         oMousePos = new Point2D.Double(0.0,0.0);
 
         activeShape = 0;
-        currentColor = Color.RED;
+        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
         colorChooser = new JColorChooser(currentColor);
 
         listener = new MyMouseListener();
@@ -32,7 +34,7 @@ public class DrawingPanel extends JComponent
 
         addMouseListener(listener);
         addMouseMotionListener(motionListener);
-        
+
         ctrOffset = new Dimension();
         ctrOffset.setSize(0.0,0.0);
     }
@@ -49,19 +51,21 @@ public class DrawingPanel extends JComponent
 
     public Dimension getPreferredSize()
     {
-        return new Dimension(400,400);
+        return preferredSize;
     }
 
     public void addCircle()
     {
-        shapes.add(new Circle(new Point2D.Double(Math.random()*400,200), 50, currentColor));
+        shapes.add(new Circle(new Point2D.Double(Math.random()*600,Math.random()*600), 50, currentColor));
         activeShape = shapes.size()-1;
+        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
     }
 
     public void addSquare()
     {
-        shapes.add(new Square(new Point2D.Double(200,Math.random()*400), 50, currentColor));
+        shapes.add(new Square(new Point2D.Double(Math.random()*600,Math.random()*600), 50, currentColor));
         activeShape = shapes.size()-1;
+        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
     }
 
     public void paintComponent(Graphics g)    
@@ -73,11 +77,11 @@ public class DrawingPanel extends JComponent
             g2.setColor(shapes.get(i).color);
             if(shapes.get(i).getClass().equals(Circle.class))
             {
-                g2.fill(new Ellipse2D.Double(shapes.get(i).getCenter().getX()-shapes.get(i).getRadius(),shapes.get(i).getCenter().getY()-shapes.get(i).getRadius(), shapes.get(i).getRadius()*2, shapes.get(i).getRadius()*2));
+                shapes.get(i).draw(g2,true);
             }
             else
             {
-                g2.fill(new Rectangle2D.Double(shapes.get(i).getCenter().getX()-shapes.get(i).getRadius(),shapes.get(i).getCenter().getY()-shapes.get(i).getRadius(), shapes.get(i).getRadius()*2, shapes.get(i).getRadius()*2));
+                shapes.get(i).draw(g2,true);
             }
         }
         //active shape
@@ -86,11 +90,11 @@ public class DrawingPanel extends JComponent
             g2.setColor(shapes.get(activeShape).color);
             if(shapes.get(activeShape).getClass().equals(Circle.class))
             {
-                g2.draw(new Ellipse2D.Double(shapes.get(activeShape).getCenter().getX()-shapes.get(activeShape).getRadius(),shapes.get(activeShape).getCenter().getY()-shapes.get(activeShape).getRadius(), shapes.get(activeShape).getRadius()*2, shapes.get(activeShape).getRadius()*2));
+                shapes.get(activeShape).draw(g2,false);
             }
             else
             {
-                g2.draw(new Rectangle2D.Double(shapes.get(activeShape).getCenter().getX()-shapes.get(activeShape).getRadius(),shapes.get(activeShape).getCenter().getY()-shapes.get(activeShape).getRadius(), shapes.get(activeShape).getRadius()*2, shapes.get(activeShape).getRadius()*2));
+                shapes.get(activeShape).draw(g2,false);
             }
         }
         //after the active shape
@@ -99,11 +103,11 @@ public class DrawingPanel extends JComponent
             g2.setColor(shapes.get(i).color);
             if(shapes.get(i).getClass().equals(Circle.class))
             {
-                g2.fill(new Ellipse2D.Double(shapes.get(i).getCenter().getX()-shapes.get(i).getRadius(),shapes.get(i).getCenter().getY()-shapes.get(i).getRadius(), shapes.get(i).getRadius()*2, shapes.get(i).getRadius()*2));
+                shapes.get(i).draw(g2,true);
             }
             else
             {
-                g2.fill(new Rectangle2D.Double(shapes.get(i).getCenter().getX()-shapes.get(i).getRadius(),shapes.get(i).getCenter().getY()-shapes.get(i).getRadius(), shapes.get(i).getRadius()*2, shapes.get(i).getRadius()*2));
+                shapes.get(i).draw(g2,true);
             }
         }
     }
@@ -111,11 +115,24 @@ public class DrawingPanel extends JComponent
     {
         public void mousePressed(MouseEvent event)
         {
+            
             oMousePos = new Point2D.Double(event.getX(),event.getY());
             for(int i=shapes.size()-1;i>=0;i--)
             {
-                if(shapes.get(i).isInside(new Point2D.Double(event.getX(),event.getY())))
+                if(shapes.get(i).isOnBorder(new Point2D.Double(event.getX(),event.getY())))
                 {
+                    activeShape = i;
+                    resizeMode = true;
+                    break;
+                }
+                else if(shapes.get(i).isInside(new Point2D.Double(event.getX(),event.getY())))
+                {
+                    if(SwingUtilities.isRightMouseButton(event))
+                    {
+                        shapes.remove(i);
+                        activeShape = shapes.size();
+                        break;
+                    }
                     activeShape = i;
                     ctrOffset.setSize(shapes.get(activeShape).getCenter().getX()-oMousePos.getX(),shapes.get(activeShape).getCenter().getY()-oMousePos.getY());
                     break;
@@ -128,7 +145,8 @@ public class DrawingPanel extends JComponent
             repaint();
         }
 
-        public void mouseReleased(MouseEvent event){}
+        public void mouseReleased(MouseEvent event)
+        {resizeMode=false;}
 
         public void mouseClicked(MouseEvent event)
         {}
@@ -141,11 +159,19 @@ public class DrawingPanel extends JComponent
     {
         public void mouseDragged(MouseEvent event)
         {
-            
-            
             if(shapes.size()!=0&&activeShape!=shapes.size())
             {
-                shapes.get(activeShape).move(event.getX()+ctrOffset.getWidth(),event.getY()+ctrOffset.getHeight());
+                if(resizeMode)
+                {
+                    System.out.println("resizing");
+
+                    shapes.get(activeShape).setRadius(Math.pow(Math.pow((event.getX()-shapes.get(activeShape).getCenter().getX()),2)+Math.pow((event.getY()-shapes.get(activeShape).getCenter().getY()),2),0.5));
+
+                }
+                else
+                {
+                    shapes.get(activeShape).move(event.getX()+ctrOffset.getWidth(),event.getY()+ctrOffset.getHeight());
+                }
             }
             repaint();
         }

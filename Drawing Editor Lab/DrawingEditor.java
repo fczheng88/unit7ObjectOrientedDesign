@@ -7,22 +7,21 @@ import javax.swing.JFrame;
 
 public class DrawingEditor extends JFrame
 {
-    private static final int FRAME_WIDTH = 500;
-    private static final int FRAME_HEIGHT = 600;
     private DrawingPanel canvas;
     private ControlPanel controls;
     public DrawingEditor(){
         canvas = new DrawingPanel();
         controls = new ControlPanel(canvas);
         
-        add(controls);
-        
-        
-        
-        setSize(FRAME_WIDTH, FRAME_HEIGHT);
+        add(controls);       
+        setSize((int)canvas.getPreferredSize().getWidth(),(int)canvas.getPreferredSize().getHeight()+200);
         setTitle("Drawing Editor");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
+    }
+    public static void main(String[] args)
+    {
+        DrawingEditor editor = new DrawingEditor();
     }
     
 }
