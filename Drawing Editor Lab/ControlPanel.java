@@ -4,27 +4,25 @@ import java.awt.event.*;
 import java.awt.*;
 import java.awt.geom.*;
 /**
- * Write a description of class CotnrolPanel here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
- */
+     * ControlPanel extends JPanel and creates the buttons for the DrawingEditor
+     * 
+     * @author Felix Zheng 
+     * @version Release
+     */
 public class ControlPanel extends JPanel
 {
-    private JButton pickColor, addCircle, addSquare;
-    private JPanel panel;
-
+    private JButton pickColor, addCircle, addSquare;//the buttons
     /**
-     * Constructor for objects of class CotnrolPanel
+     * Constructor for objects of class ControlPanel
      */
     public ControlPanel(DrawingPanel canvas)
     {
-
+        //Creates the buttons
         addCircle = new JButton("Add Circle");
         addSquare = new JButton("Add Square");   
         pickColor = new JButton("Pick Color");
-        panel = new JPanel();
-
+        
+        //actionListeners are added with their own ActionListeners
         pickColor.addActionListener(new ActionListener()
             {   
                 public void actionPerformed(ActionEvent event)
@@ -48,13 +46,13 @@ public class ControlPanel extends JPanel
                         canvas.repaint();}
                 }
             });
-        panel.add(addCircle);
-
-        panel.add(addSquare);
-
-        panel.add(pickColor);
-        add(canvas, BorderLayout.PAGE_START);
-        add(panel,BorderLayout.PAGE_END);
+        
+        //Everthing is added to the Panel
+        setLayout(new BorderLayout());
+        add(addCircle,BorderLayout.WEST);
+        add(addSquare,BorderLayout.EAST);
+        add(pickColor,BorderLayout.CENTER);
+        add(canvas,BorderLayout.NORTH);
         
     }
 
