@@ -11,18 +11,6 @@ public class Square extends Shape
         super(center, radius, color);
     }
 
-    Point2D.Double getCenter()
-    { return center;}
-
-    double getRadius()
-    {return radius;}
-
-    void move(double x, double y)
-    {center = new Point2D.Double(x,y);}
-
-    void setRadius(double r)
-    {radius = r;}
-
     boolean isInside(Point2D.Double point)
     {
         return Math.abs(point.getX()-center.getX())<radius&&Math.abs(point.getY()-center.getY())<radius;

@@ -1,9 +1,7 @@
-import javax.swing.JFrame;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
+import javax.swing.*;
+import java.awt.event.*;
 import java.awt.*;
 import java.awt.geom.*;
-import javax.swing.JFrame;
 /**
  * DrawingEditor extends JFrame and contains main method to create a Drawing Editor. 
  * 

@@ -1,7 +1,5 @@
 import javax.swing.*;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.*;
 import java.awt.*;
 import java.awt.geom.*;
@@ -15,15 +13,14 @@ public class DrawingPanel extends JComponent
 {
     private ArrayList<Shape> shapes;//creates the array for storing shapes
     private int activeShape; //stores the shape currently being edited/moved
-    private boolean existsActiveShape; //is there currently an active shape?
     private Color currentColor;//stores the current color. Automatically randomized unless JColorChooser is called.
     private JColorChooser colorChooser;//Allows the user to choose a color using a GUI
     private MyMouseListener listener;//Listens for mouse events
     private MyMouseMotionListener motionListener;//Listens for mouse events
-    private Point2D.Double oMousePos;//Original Mouse Position - used here and there for shape moves/resizes
-    private Dimension ctrOffset, preferredSize;//Stores various goodies
-    private boolean resizeMode;//Determines whether the DrawingEditor is in "resize mode" and enables shapes to be resized
-
+    private MyKeyListener keyListener;//Listens for key events
+    private Dimension preferredSize;//Stores goodies
+    private boolean resizeMode;//is any shape being resized now?
+    private Point2D.Double oldMousePos;
     /**
      * DrawingPanel Constructor initializes instance variables
      *
@@ -31,26 +28,21 @@ public class DrawingPanel extends JComponent
     public DrawingPanel()
     {
         preferredSize = new Dimension(400,400);//sets the size of the canvas
-        shapes = new ArrayList<Shape>(); 
-        
-        this.setBackground(Color.GREEN);
-        
-        existsActiveShape = false;
-
-        oMousePos = new Point2D.Double(0.0,0.0);
-
-        activeShape = 0;
+        shapes = new ArrayList<Shape>();
         currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
         colorChooser = new JColorChooser(currentColor);
+        activeShape=-1;//no active shape
 
         listener = new MyMouseListener();
-        motionListener = new MyMouseMotionListener();
-
         addMouseListener(listener);
+
+        motionListener = new MyMouseMotionListener();
         addMouseMotionListener(motionListener);
 
-        ctrOffset = new Dimension();
-        ctrOffset.setSize(0.0,0.0);
+        resizeMode = false;
+
+        keyListener = new MyKeyListener();
+        addKeyListener(keyListener);        
     }
 
     /**
@@ -79,9 +71,7 @@ public class DrawingPanel extends JComponent
      * @return The dimensions of the drawing canvas
      */
     public Dimension getPreferredSize()
-    {
-        return preferredSize;
-    }
+    {return preferredSize;}
 
     /**
      * Method addCircle adds a new circle to the list of shapes
@@ -91,10 +81,6 @@ public class DrawingPanel extends JComponent
     public void addCircle()
     {
         shapes.add(new Circle(new Point2D.Double(Math.random()*preferredSize.getWidth(),Math.random()*preferredSize.getHeight()), Math.random()*50+25, currentColor));
-        activeShape = shapes.size()-1;
-        existsActiveShape = true;
-        resizeMode = false;
-        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
     }
 
     /**
@@ -106,10 +92,6 @@ public class DrawingPanel extends JComponent
     public void addSquare()
     {
         shapes.add(new Square(new Point2D.Double(Math.random()*preferredSize.getWidth(),Math.random()*preferredSize.getHeight()), Math.random()*50+25, currentColor));
-        activeShape = shapes.size()-1;
-        existsActiveShape = true;
-        resizeMode = false;
-        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
     }
 
     /**
@@ -120,33 +102,18 @@ public class DrawingPanel extends JComponent
     public void paintComponent(Graphics g)    
     {
         Graphics2D g2 = (Graphics2D) g;
-        //before the active shape
-        for(int i=0;i<activeShape;i++)
+
+        for(int i=0;i<shapes.size();i++)
         {
-            g2.setColor(shapes.get(i).color);
-            if(shapes.get(i).getClass().equals(Circle.class))
-                shapes.get(i).draw(g2,true);
-            else
+            g2.setColor(shapes.get(i).getColor());
+            if(i!=activeShape)
                 shapes.get(i).draw(g2,true);
         }
-        //active shape
-        if(shapes.size()!=0)//&&existsActiveShape)
+        if(activeShape!=-1)
         {
-            g2.setColor(shapes.get(activeShape).color);
-            if(shapes.get(activeShape).getClass().equals(Circle.class))
-                shapes.get(activeShape).draw(g2,false);
-            else
+            g2.setColor(shapes.get(activeShape).getColor());
             shapes.get(activeShape).draw(g2,false);
-        }
-        //after the active shape
-        for(int i=activeShape+1;i<shapes.size();i++)
-        {
-            g2.setColor(shapes.get(i).color);
-            if(shapes.get(i).getClass().equals(Circle.class))
-                shapes.get(i).draw(g2,true);
-            else
-            shapes.get(i).draw(g2,true);
-        }
+        }       
     }
     /**
      * MyMouseListener implements MouseListener and defines several methods to run based on the type of mouse event
@@ -161,37 +128,29 @@ public class DrawingPanel extends JComponent
          *
          * @param event The mouse event
          */
-        public void mousePressed(MouseEvent event)
+        public void mousePressed(MouseEvent e)
         {
-            oMousePos = new Point2D.Double(event.getX(),event.getY());
+            oldMousePos = new Point2D.Double(e.getX(), e.getY());
             for(int i=shapes.size()-1;i>=0;i--)
             {
-                if(shapes.get(i).isOnBorder(new Point2D.Double(event.getX(),event.getY())))
+                if(shapes.get(i).isOnBorder(new Point2D.Double(e.getX(),e.getY())))
                 {
                     activeShape = i;
-                    existsActiveShape = true;
                     resizeMode = true;
-                    repaint();
-                    break;
+                    return;
                 }
-                else if(shapes.get(i).isInside(new Point2D.Double(event.getX(),event.getY())))
+                if(shapes.get(i).isInside(new Point2D.Double(e.getX(),e.getY())))
                 {
-                    if(SwingUtilities.isRightMouseButton(event))
+                    if(SwingUtilities.isRightMouseButton(e))
                     {
                         shapes.remove(i);
-                        existsActiveShape = false;
                         repaint();
-                        break;
+                        return;
                     }
-                    activeShape = i;
-                    existsActiveShape = true;
-                    ctrOffset.setSize(shapes.get(activeShape).getCenter().getX()-oMousePos.getX(),shapes.get(activeShape).getCenter().getY()-oMousePos.getY());
-                    repaint();
-                    break;
+                    activeShape=i;
+                    return;                    
                 }
             }
-            existsActiveShape = false;
-            repaint();
         }
 
         /**
@@ -199,10 +158,10 @@ public class DrawingPanel extends JComponent
          *
          * @param event a mouse event
          */
-        public void mouseReleased(MouseEvent event)
+        public void mouseReleased(MouseEvent e)
         {
+            activeShape=-1;
             resizeMode=false;
-            //existsActiveShape = false;
             repaint();
         }
 
@@ -211,21 +170,21 @@ public class DrawingPanel extends JComponent
          *
          * @param event a mouse event
          */
-        public void mouseClicked(MouseEvent event){}
+        public void mouseClicked(MouseEvent e){}
 
         /**
          * Method mouseEntered is called when the mouse is clicked
          *
          * @param event a mouse event
          */
-        public void mouseEntered(MouseEvent event){}
+        public void mouseEntered(MouseEvent e){}
 
         /**
          * Method mouseExited is called when the mouse is clicked
          *
          * @param event a mouse event
          */
-        public void mouseExited(MouseEvent event){}        
+        public void mouseExited(MouseEvent e){}        
     }
     /**
      * MyMouseMotionListener implements MouseMotionListener and defines several methods to run based on the type of mouse event
@@ -235,23 +194,75 @@ public class DrawingPanel extends JComponent
      */
     class MyMouseMotionListener implements MouseMotionListener
     {
-        public void mouseDragged(MouseEvent event)
+
+        /**
+         * Method mouseDragged
+         *
+         * @param e A mouse event
+         */
+        public void mouseDragged(MouseEvent e)
         {
-            if(shapes.size()!=0&&existsActiveShape)
+            if(activeShape == -1)
             {
-                if(resizeMode)
-                {
-                    shapes.get(activeShape).setRadius(Math.pow(Math.pow((event.getX()-shapes.get(activeShape).getCenter().getX()),2)+Math.pow((event.getY()-shapes.get(activeShape).getCenter().getY()),2),0.5));
+                return;
+            }
+            
+            Shape s = shapes.get(activeShape);
+            Point2D.Double c = s.getCenter();
+            if(resizeMode)
+            {   
+                if(s.getClass() == Circle.class)
+                {    
+                    s.setRadius(Math.pow(
+                            Math.pow((e.getX()-c.getX()),2) + Math.pow((e.getY()-c.getY()),2),
+                            0.5));
                 }
-                else
+                else//square
                 {
-                    shapes.get(activeShape).move(event.getX()-oMousePos.getX(),event.getY()-oMousePos.getY());
-                    oMousePos = new Point2D.Double(event.getX(), event.getY());
+                    Square.WhereInShape wis = ((Square)s).getWhereInShape(new Point2D.Double(e.getX(),e.getY()));
+                    if(wis==Square.WhereInShape.CORNER)
+                    {
+                        double newRadius = Math.pow(
+                                (Math.pow(e.getX()-c.getX(),2) + Math.pow(e.getY()-c.getY(),2)) / 2,
+                                0.5);
+                        s.setRadius(newRadius);
+                    }
+                    else if(wis==Square.WhereInShape.TOPBOTTOM)
+                    {
+                        s.setRadius(Math.abs(e.getY()-c.getY()));
+                    }
+                    else if(wis==Square.WhereInShape.LEFTRIGHT)
+                    {
+                        s.setRadius(Math.abs(e.getX()-c.getX()));
+                    }
                 }
             }
+            else//move
+            {
+                s.move(e.getX()-oldMousePos.getX(),e.getY()-oldMousePos.getY());
+            }
+            oldMousePos = new Point2D.Double(e.getX(), e.getY());
             repaint();
         }
 
-        public void mouseMoved(MouseEvent event){}       
+        public void mouseMoved(MouseEvent e){}       
     }
+    /**
+     * MyKeyListener implements KeyListener and defines several methods to run based on the type of key event
+     * @author Felix Zheng 
+     * @version Release
+     */
+    class MyKeyListener implements KeyListener
+    {
+        public void keyTyped(KeyEvent e)
+        {
+        }
+
+        public void keyPressed(KeyEvent e)
+        {}
+
+        public void keyReleased(KeyEvent e)
+        {}
+    }
+
 }

@@ -3,9 +3,10 @@ import java.awt.geom.*;
 public abstract class Shape
 {
     // instance variables to store the good stuff
-    Point2D.Double center;
-    double radius;
-    Color color;
+    protected Point2D.Double center;
+    protected double radius;
+    protected Color color;
+    protected final double BORDER_ERROR=3;
     /**
      * Shape Constructor
      *
@@ -26,6 +27,14 @@ public abstract class Shape
      */
     Point2D.Double getCenter()
     { return center;}
+
+    /**
+     * Method getColor returns the color of the shape as a Color
+     *
+     * @return The color of the shape as a Point2D.Double
+     */
+    Color getColor()
+    { return color;}
 
     /**
      * Method getRadius returns the radius of the shape as a double
