@@ -12,6 +12,10 @@ public class DrawingEditor extends JFrame
 {
     private DrawingPanel canvas;
     private ControlPanel controls;
+    /**
+     * DrawingEditor Constructor
+     *
+     */
     public DrawingEditor(){
         canvas = new DrawingPanel();
         controls = new ControlPanel(canvas);

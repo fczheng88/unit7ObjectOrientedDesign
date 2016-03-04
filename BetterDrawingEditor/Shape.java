@@ -70,7 +70,20 @@ public abstract class Shape
      * @return Whether the point "isInside" the shape
      */
     abstract boolean isInside(Point2D.Double point);
-    
+
+    /**
+     * Method isOnBorder determines if a point is on the border of a shape within BORDER_ERROR of error
+     *
+     * @param point The point tested
+     * @return Is the point on the border?
+     */
     abstract boolean isOnBorder(Point2D.Double point);
+
+    /**
+     * Method draw draws the shape
+     *
+     * @param g2 A parameter
+     * @param filled Is the shape filled? Determines if an outline or solid shape is drawn
+     */
     abstract void draw(Graphics2D g2, boolean filled);  
 }

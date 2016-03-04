@@ -20,17 +20,22 @@ public class DrawingPanel extends JComponent
     private MyKeyListener keyListener;//Listens for key events
     private Dimension preferredSize;//Stores goodies
     private boolean resizeMode;//is any shape being resized now?
+    private boolean useRandColor;//use a random color or select one?
     private Point2D.Double oldMousePos;
+    Square.WhereInShape wis;
     /**
      * DrawingPanel Constructor initializes instance variables
      *
      */
     public DrawingPanel()
     {
-        preferredSize = new Dimension(400,400);//sets the size of the canvas
+        preferredSize = new Dimension(600,600);//sets the size of the canvas
         shapes = new ArrayList<Shape>();
-        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
+        
+        //begin with a random color
+        currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
         colorChooser = new JColorChooser(currentColor);
+        
         activeShape=-1;//no active shape
 
         listener = new MyMouseListener();
@@ -39,10 +44,10 @@ public class DrawingPanel extends JComponent
         motionListener = new MyMouseMotionListener();
         addMouseMotionListener(motionListener);
 
-        resizeMode = false;
-
         keyListener = new MyKeyListener();
-        addKeyListener(keyListener);        
+        addKeyListener(keyListener);     
+        
+        resizeMode = false;//inits resizeMode
     }
 
     /**
@@ -61,7 +66,22 @@ public class DrawingPanel extends JComponent
      */
     public void pickColor()
     {
-        currentColor = colorChooser.showDialog(this, "Choose a Color",currentColor);
+        Color chosenColor = colorChooser.showDialog(this, "Choose a Color",currentColor);
+        if(chosenColor!=null)
+        {
+            currentColor = chosenColor;
+        }
+        requestFocus();
+    }
+
+    /**
+     * Method useRandomColor sets whether new shapes should have random colors
+     *
+     * @param tf Use a random color?
+     */
+    public void useRandomColor(boolean tf)
+    {
+        useRandColor = tf;
     }
 
     /**
@@ -80,6 +100,10 @@ public class DrawingPanel extends JComponent
      */
     public void addCircle()
     {
+        if(useRandColor)
+        {
+            currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
+        }
         shapes.add(new Circle(new Point2D.Double(Math.random()*preferredSize.getWidth(),Math.random()*preferredSize.getHeight()), Math.random()*50+25, currentColor));
     }
 
@@ -91,6 +115,10 @@ public class DrawingPanel extends JComponent
      */
     public void addSquare()
     {
+        if(useRandColor)
+        {
+            currentColor = new Color((int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255),(int)(Math.random()*255));
+        }
         shapes.add(new Square(new Point2D.Double(Math.random()*preferredSize.getWidth(),Math.random()*preferredSize.getHeight()), Math.random()*50+25, currentColor));
     }
 
@@ -137,6 +165,10 @@ public class DrawingPanel extends JComponent
                 {
                     activeShape = i;
                     resizeMode = true;
+                    if(shapes.get(activeShape).getClass()==Square.class)
+                    {
+                        wis=((Square)shapes.get(activeShape)).getWhereInShape(new Point2D.Double(e.getX(),e.getY()));
+                    }
                     return;
                 }
                 if(shapes.get(i).isInside(new Point2D.Double(e.getX(),e.getY())))
@@ -151,6 +183,7 @@ public class DrawingPanel extends JComponent
                     return;                    
                 }
             }
+            activeShape=-1;
         }
 
         /**
@@ -160,7 +193,7 @@ public class DrawingPanel extends JComponent
          */
         public void mouseReleased(MouseEvent e)
         {
-            activeShape=-1;
+            //activeShape=-1;
             resizeMode=false;
             repaint();
         }
@@ -206,7 +239,7 @@ public class DrawingPanel extends JComponent
             {
                 return;
             }
-            
+
             Shape s = shapes.get(activeShape);
             Point2D.Double c = s.getCenter();
             if(resizeMode)
@@ -219,7 +252,7 @@ public class DrawingPanel extends JComponent
                 }
                 else//square
                 {
-                    Square.WhereInShape wis = ((Square)s).getWhereInShape(new Point2D.Double(e.getX(),e.getY()));
+                    //Square.WhereInShape wis = ((Square)s).getWhereInShape(new Point2D.Double(e.getX(),e.getY()));
                     if(wis==Square.WhereInShape.CORNER)
                     {
                         double newRadius = Math.pow(
@@ -245,6 +278,11 @@ public class DrawingPanel extends JComponent
             repaint();
         }
 
+        /**
+         * Method mouseMoved is called when the mouse is moved
+         *
+         * @param e The mouse event
+         */
         public void mouseMoved(MouseEvent e){}       
     }
     /**
@@ -254,15 +292,82 @@ public class DrawingPanel extends JComponent
      */
     class MyKeyListener implements KeyListener
     {
-        public void keyTyped(KeyEvent e)
+        boolean shiftPressed = false;
+        /**
+         * Method keyTyped detects keystrokes and modifies shapes based on those
+         *
+         * @param e A key event
+         */
+        public void keyTyped(KeyEvent e){}
+
+        /**
+         * Method keyPressed detects key presses and modifies shapes based on those
+         *
+         * @param e A key event
+         */
+        public void keyPressed(KeyEvent e)
         {
+            int keyCode = e.getKeyCode();
+            if(keyCode==KeyEvent.VK_ESCAPE) //escape active shape
+            {
+                activeShape=-1;
+                repaint();
+                return;
+            }
+            if(keyCode==KeyEvent.VK_SHIFT) 
+            {
+                shiftPressed=true; //does not use resizeMode so that shapes can be dragged while shift is pressed
+            }
+            if(activeShape!=-1)
+            {
+                Shape s = shapes.get(activeShape);
+                if(shiftPressed)//resize the shape
+                {
+                    double radius = s.getRadius();
+                    if(keyCode==KeyEvent.VK_UP||keyCode==KeyEvent.VK_RIGHT)//make bigger
+                    {
+                        s.setRadius(radius+1);
+                    }
+                    else if((keyCode==KeyEvent.VK_DOWN || keyCode==KeyEvent.VK_LEFT)&&radius >=1)//make smaller
+                    {
+                        s.setRadius(radius-1);
+                    }
+                }
+                else
+                {
+                    if(keyCode==KeyEvent.VK_UP)//up arrow, move up
+                    {
+                        s.move(0,-1);
+                    }
+                    else if(keyCode==KeyEvent.VK_DOWN)//down arrow, move down
+                    {
+                        s.move(0,1);
+                    }
+                    else if(keyCode==KeyEvent.VK_LEFT)//left arrow, move left
+                    {
+                        s.move(-1,0);
+                    }
+                    else if(keyCode==KeyEvent.VK_RIGHT)//right arrow, move right
+                    {
+                        s.move(1,0);
+                    }
+                }
+            }
+            repaint();
         }
 
-        public void keyPressed(KeyEvent e)
-        {}
-
+        /**
+         * Method keyReleased detects key releases and modifies shapes based on those
+         *
+         * @param e A key event
+         */
         public void keyReleased(KeyEvent e)
-        {}
+        {
+            if(e.getKeyCode()==KeyEvent.VK_SHIFT)
+            {
+                shiftPressed=false;//the arrow keys aren't resizing the shape anymore
+            }
+        }
     }
 
 }
